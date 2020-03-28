@@ -1,0 +1,15 @@
+[package]
+name = "issue-example"
+version = "0.1.0"
+authors = ["Henrik Patjens <hpatjens@gmail.com>"]
+edition = "2018"
+
+[dependencies]
+winit = "0.21.0"
+vulkano = "0.17.0"
+vulkano-win = "0.17.0"
+vulkano-shaders = "0.17.0"
+nalgebra = "0.19.0"
+nalgebra-glm = "0.5.0"
+tobj = "0.1.11"
+itertools = "0.8.2"
