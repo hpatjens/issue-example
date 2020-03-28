@@ -11,7 +11,13 @@ use vulkano::{
         attachment::AttachmentImage,
         SwapchainImage,
     },
-    instance::{Instance, PhysicalDevice},
+    instance::{
+        debug::{DebugCallback, MessageSeverity, MessageType},
+        self, 
+        Instance, 
+        InstanceExtensions,
+        PhysicalDevice
+    },
     pipeline::{
         GraphicsPipeline, 
         viewport::Viewport,
@@ -173,8 +179,55 @@ pub fn import_model<P: AsRef<Path>>(device: &Arc<Device>, p: P) -> io::Result<Mo
 }
 
 fn main() {
-    let required_extensions = vulkano_win::required_extensions();
-    let instance = Instance::new(None, &required_extensions, None).unwrap();
+    let required_extensions = InstanceExtensions {
+        ext_debug_utils: true,
+        ..vulkano_win::required_extensions()
+    };
+
+    let layers = instance::layers_list().unwrap();
+    for layer in layers {
+        println!("{}", layer.name());
+    }
+    let layer = "VK_LAYER_LUNARG_standard_validation";
+    let layers = vec![layer];
+
+    let instance = Instance::new(None, &required_extensions, layers).unwrap();
+
+    let severity = MessageSeverity {
+        error: true,
+        warning: true,
+        information: true,
+        verbose: true,
+    };
+
+    let ty = MessageType::all();
+
+    let _debug_callback = DebugCallback::new(&instance, severity, ty, |msg| {
+        let severity = if msg.severity.error {
+            "error"
+        } else if msg.severity.warning {
+            "warning"
+        } else if msg.severity.information {
+            "information"
+        } else if msg.severity.verbose {
+            "verbose"
+        } else {
+            panic!("no-impl");
+        };
+
+        let ty = if msg.ty.general {
+            "general"
+        } else if msg.ty.validation {
+            "validation"
+        } else if msg.ty.performance {
+            "performance" }
+        else {
+            panic!("no-impl");
+        };
+
+        println!("{} {} {}: {}", msg.layer_prefix, ty, severity, msg.description);
+    }).ok();
+
     let physical = PhysicalDevice::enumerate(&instance).next().unwrap();
 
     println!("Using device: {} (type: {:?})", physical.name(), physical.ty());
@@ -195,6 +248,16 @@ fn main() {
     ).unwrap();
 
     let queue = queues.next().unwrap();
+
+
+
+
+
+
+
+
+
+
 
     let (mut swapchain, images) = {
         let caps = surface.capabilities(physical).unwrap();
