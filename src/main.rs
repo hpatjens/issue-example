@@ -1,5 +1,4 @@
-use nalgebra::{Perspective3};
-use nalgebra_glm::{cross, normalize};
+use nalgebra_glm::{cross, normalize, perspective_rh_zo};
 use vulkano_win::VkSurfaceBuild;
 use vulkano::{
     buffer::{BufferUsage, CpuAccessibleBuffer},
@@ -31,7 +30,7 @@ type Vec4 = nalgebra::Vector4<f32>;
 type Mat4 = nalgebra::Matrix4<f32>;
 type Point3 = nalgebra::Point3<f32>;
 
-const DEPTH_FORMAT: Format = Format::D16Unorm;
+const DEPTH_FORMAT: Format = Format::D32Sfloat;
 
 #[derive(Default, Debug, Clone)]
 pub struct Vertex { 
@@ -107,15 +106,18 @@ impl SphericalCamera {
     }
 
     pub fn matrix(&self, viewport_size: (f32, f32)) -> Mat4 {
-        let perspective = {
-            let (width, height) = viewport_size;
-            Perspective3::new(width / height, PI / 4.0, 0.01, 1000.0)
-        };
-        let projection = perspective.as_matrix();
+        let projection = perspective_rh_zo(
+            viewport_size.0 / viewport_size.1,
+            70.0,
+            0.01,
+            1000.0
+        );
+        
         let view = {
             let eye = spherical_to_cartesian(self.radius, self.theta, self.phi);
             Mat4::look_at_rh(&Point3::from(self.center + eye), &Point3::from(self.center), &Vec3::y_axis())
         };
+        
         projection * view
     }
 }
