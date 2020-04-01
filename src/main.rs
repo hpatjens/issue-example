@@ -32,11 +32,10 @@ use winit::event::{Event, DeviceEvent , WindowEvent, ElementState, MouseButton, 
 use std::{io, path::Path, sync::Arc, f32::consts::PI };
 
 type Vec3 = nalgebra::Vector3<f32>;
-type Vec4 = nalgebra::Vector4<f32>;
 type Mat4 = nalgebra::Matrix4<f32>;
 type Point3 = nalgebra::Point3<f32>;
 
-const DEPTH_FORMAT: Format = Format::D32Sfloat;
+const DEPTH_FORMAT: Format = Format::D16Unorm;
 
 #[derive(Default, Debug, Clone)]
 pub struct Vertex { 
@@ -95,7 +94,7 @@ impl SphericalCamera {
     }
 
     pub fn rotate_right(&mut self, dphi: f32) { 
-        self.phi = self.phi + dphi;
+        self.phi = self.phi - dphi;
     }
 
     pub fn move_up(&mut self, delta: f32) {
@@ -108,7 +107,7 @@ impl SphericalCamera {
     pub fn move_right(&mut self, delta: f32) {
         let eye = spherical_to_cartesian(self.radius, self.theta, self.phi);
         let right = cross(&Vec3::y_axis(), &eye);
-        self.center += delta * normalize(&right);
+        self.center -= delta * normalize(&right);
     }
 
     pub fn matrix(&self, viewport_size: (f32, f32)) -> Mat4 {
@@ -121,7 +120,7 @@ impl SphericalCamera {
         
         let view = {
             let eye = spherical_to_cartesian(self.radius, self.theta, self.phi);
-            Mat4::look_at_rh(&Point3::from(self.center + eye), &Point3::from(self.center), &Vec3::y_axis())
+            Mat4::look_at_rh(&Point3::from(self.center + eye), &Point3::from(self.center), &-Vec3::y_axis())
         };
         
         projection * view
@@ -381,7 +380,7 @@ fn main() {
         .vertex_input_single_buffer()
         .vertex_shader(model_program.vs.main_entry_point(), ())
         .triangle_list()
-        .front_face_counter_clockwise()
+        .front_face_clockwise()
         .cull_mode_back()
         .viewports_dynamic_scissors_irrelevant(1)
         .fragment_shader(model_program.fs.main_entry_point(), ())
@@ -488,15 +487,9 @@ fn main() {
                 let clear_values = vec!([0.8, 0.85, 0.95, 1.0].into(), 1.0.into());
 
                 let matrix = {
-                    let gl_coordinate_system = Mat4::from_columns(&[
-                        Vec4::new(1.0,  0.0, 0.0, 0.0),
-                        Vec4::new(0.0, -1.0, 0.0, 0.0),
-                        Vec4::new(0.0,  0.0, 0.5, 0.0),
-                        Vec4::new(0.0,  0.0, 0.5, 1.0),
-                    ]);
                     let view_projection = {
                         let framebuffer_size = (framebuffer_dimensions[0] as f32, framebuffer_dimensions[1] as f32);
-                        gl_coordinate_system * spherical_camera.matrix(framebuffer_size)
+                        spherical_camera.matrix(framebuffer_size)
                     };
                     let world = Mat4::identity();
                     let na_matrix = view_projection * world;
