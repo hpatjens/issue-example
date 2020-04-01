@@ -35,7 +35,7 @@ type Vec3 = nalgebra::Vector3<f32>;
 type Mat4 = nalgebra::Matrix4<f32>;
 type Point3 = nalgebra::Point3<f32>;
 
-const DEPTH_FORMAT: Format = Format::D16Unorm;
+const DEPTH_FORMAT: Format = Format::D24Unorm_S8Uint;
 
 #[derive(Default, Debug, Clone)]
 pub struct Vertex { 
@@ -484,7 +484,7 @@ fn main() {
                     recreate_swapchain = true;
                 }
 
-                let clear_values = vec!([0.8, 0.85, 0.95, 1.0].into(), 1.0.into());
+                let clear_values = vec!([0.8, 0.85, 0.95, 1.0].into(), (1f32, 0u32).into());
 
                 let matrix = {
                     let view_projection = {
