@@ -114,7 +114,7 @@ impl SphericalCamera {
     pub fn matrix(&self, viewport_size: (f32, f32)) -> Mat4 {
         let projection = perspective_rh_zo(
             viewport_size.0 / viewport_size.1,
-            70.0,
+            PI / 4.0,
             0.01,
             1000.0
         );
